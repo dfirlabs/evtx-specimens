@@ -1,5 +1,11 @@
 # Script to generate Windows XML Event Log (EVTX) test files
 
+$OsVersion = [System.Environment]::OSVersion.Version
+
+$SpecimensPath = "${PWD}\specimens\${OsVersion.Major}.${OsVersion.Minor}"
+
+New-Item -Force -ItemType Directory -Path ${SpecimensPath}
+
 # New-EventLog requires administrator privilege
 New-EventLog -LogName TestLog -Source TestSource
 
@@ -26,9 +32,7 @@ Write-EventLog -LogName TestLog -Source TestSource -EventID 333 -EntryType Infor
 
 Write-EventLog -LogName TestLog -Source TestSource -EventID 4444 -EntryType Information -Message "Message with embedded XML </Data>"
 
-$LogFile = Get-WmiObject -Class Win32_NTEventlogFile | Where-Object LogfileName -eq "TestLog"
-$LogFile.BackupEventlog("${PWD}\TestLog.evtx")
+Invoke-CimMethod -Query "Select * From Win32_NTEventlogFile Where LogfileName='TestLog'" -MethodName "BackupEventlog" ` -Arguments @{ ArchiveFileName = "${SpecimensPath}\TestLog.evtx" }
 
 Remove-EventLog -Source TestSource
 Remove-EventLog -LogName TestLog
-
